@@ -729,6 +729,7 @@ function initChat() {
       '<div class="chat-avatar" aria-hidden="true">F</div>' +
       '<div class="chat-head-text"><strong>FesTech Assistant</strong>' +
       '<span><i class="chat-status-dot"></i>Ask about the portfolio</span></div>' +
+      '<button class="chat-close" type="button" aria-label="Close chat" title="Close">×</button>' +
     '</div>' +
     '<div class="chat-log" role="log" aria-live="polite"></div>' +
     '<div class="chat-chips"></div>' +
@@ -826,6 +827,9 @@ function initChat() {
     open(next);
     if (next && !log.children.length) greet();
   });
+
+  const chatClose = panel.querySelector('.chat-close');
+  if (chatClose) chatClose.addEventListener('click', () => open(false));
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && panel.classList.contains('is-open')) { open(false); fab.focus(); }
