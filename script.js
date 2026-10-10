@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initThemeToggle();
   initImageInteractions();
   initVideoAutoplay();
+  initLiteYT();
   initVideoModal();
   initScrollButtons();
   initGradeParallax();
@@ -522,6 +523,77 @@ function initVideoAutoplay() {
   document.querySelectorAll('.video-hover-overlay').forEach(el => el.remove());
 }
 
+/* Lite YouTube — thumb + hqdefault.jpg until intersection/click, then muted autoplay iframe + mute toggle */
+function initLiteYT() {
+  const nodes = document.querySelectorAll('.lite-yt[data-id]');
+  if (!nodes.length) return;
+
+  function buildIframe(host, id) {
+    const f = document.createElement('iframe');
+    // muted autoplay needs allow autoplay + enablejsapi for unmute toggle
+    const origin = encodeURIComponent(window.location.origin);
+    f.src = 'https://www.youtube.com/embed/' + id + '?autoplay=1&mute=1&playsinline=1&rel=0&modestbranding=1&enablejsapi=1&origin=' + origin;
+    f.title = host.getAttribute('data-title') || 'YouTube video';
+    f.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture');
+    f.setAttribute('allowfullscreen', '');
+    f.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+    f.setAttribute('loading', 'lazy');
+    return f;
+  }
+
+  function load(host) {
+    if (host.classList.contains('lite-yt--loaded')) return;
+    const id = host.getAttribute('data-id');
+    if (!id) return;
+    host.classList.add('lite-yt--loaded');
+    host.setAttribute('aria-label', 'Playing');
+    const iframe = buildIframe(host, id);
+    host.prepend(iframe);
+    host.dataset.muted = '1';
+    const muteBtn = host.querySelector('.lite-yt__mute');
+    if (muteBtn) {
+      muteBtn.hidden = false;
+      muteBtn.setAttribute('aria-pressed', 'true');
+      muteBtn.textContent = '🔇';
+      muteBtn.title = 'Unmute';
+    }
+  }
+
+  nodes.forEach(host => {
+    const muteBtn = host.querySelector('.lite-yt__mute');
+    if (muteBtn) {
+      muteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const iframe = host.querySelector('iframe');
+        if (!iframe || !iframe.contentWindow) return;
+        const muted = host.dataset.muted !== '0';
+        const func = muted ? 'unMute' : 'mute';
+        try { iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: func, args: '' }), '*'); } catch (_) {}
+        host.dataset.muted = muted ? '0' : '1';
+        muteBtn.setAttribute('aria-pressed', String(!muted));
+        muteBtn.textContent = muted ? '🔊' : '🔇';
+        muteBtn.title = muted ? 'Mute' : 'Unmute';
+      });
+    }
+    const activate = () => load(host);
+    host.addEventListener('click', activate);
+    host.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); }
+    });
+  });
+
+  if (!('IntersectionObserver' in window)) return;
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        load(entry.target);
+        io.unobserve(entry.target);
+      }
+    });
+  }, { rootMargin: '320px 0px', threshold: 0.01 });
+  nodes.forEach(n => io.observe(n));
+}
+
 /* ── Scroll-to-Top / Scroll-to-Bottom Buttons ── */
 function initScrollButtons() {
   const topBtn = document.getElementById('scrollToTop');
@@ -551,11 +623,11 @@ function initThemeToggle() {
   const toggle = document.getElementById('themeToggle');
   if (!toggle) return;
 
-  const saved = localStorage.getItem('theme') || 'dark';
+  const saved = localStorage.getItem('theme') || 'light';
   document.documentElement.setAttribute('data-theme', saved);
 
   toggle.addEventListener('click', () => {
-    const current = document.documentElement.getAttribute('data-theme') || 'dark';
+    const current = document.documentElement.getAttribute('data-theme') || 'light';
     const next = current === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', next);
     localStorage.setItem('theme', next);

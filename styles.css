@@ -889,6 +889,86 @@ html:not(.js) .reveal { opacity: 1; transform: none; }
   color: var(--muted);
   letter-spacing: 0.08em;
 }
+/* ── Lite YouTube — thumb until intersection/click, then muted autoplay iframe ── */
+.lite-yt {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/9;
+  background: #000;
+  cursor: pointer;
+  overflow: hidden;
+  display: block;
+  border: 0;
+}
+.video-card--short .lite-yt { aspect-ratio: 9/16; }
+.video-card--wide .lite-yt  { aspect-ratio: 16/9; }
+.lite-yt__thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform .35s ease, opacity .25s ease;
+}
+.lite-yt:hover .lite-yt__thumb { transform: scale(1.03); }
+.lite-yt__play {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 0;
+  background: rgba(255,255,255,.96);
+  color: #0a0a0c;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 8px 28px rgba(0,0,0,.35);
+  transition: transform .2s ease, background .2s ease;
+  pointer-events: none;
+}
+.lite-yt:hover .lite-yt__play { transform: scale(1.06); }
+.lite-yt__play svg { width: 22px; height: 22px; margin-left: 2px; fill: currentColor; }
+.lite-yt__badge {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  font: 600 10px/1 var(--font-mono, monospace);
+  letter-spacing: .08em;
+  background: rgba(0,0,0,.65);
+  color: #fff;
+  padding: 6px 8px;
+  border-radius: 999px;
+}
+.lite-yt iframe {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: inherit;
+  border: 0;
+  display: block;
+}
+.lite-yt--loaded .lite-yt__thumb,
+.lite-yt--loaded .lite-yt__play,
+.lite-yt--loaded .lite-yt__badge { display: none; }
+.lite-yt__mute {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 3;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.25);
+  background: rgba(0,0,0,.72);
+  color: #fff;
+  display: none;
+  place-items: center;
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+}
+.lite-yt--loaded .lite-yt__mute { display: grid; }
+.lite-yt__mute[aria-pressed="false"] { background: rgba(255,255,255,.92); color: #0a0a0c; }
+
 .empty-section {
   text-align: center;
   padding: 48px 24px;
