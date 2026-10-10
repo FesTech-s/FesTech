@@ -151,7 +151,7 @@ function initDropdown() {
 
     trigger.addEventListener('click', function (e) {
       if (window.innerWidth <= 860) {
-        e.preventDefault();
+        const isOpen = dropdown.classList.contains('open');
         dropdowns.forEach(d => {
           if (d !== dropdown) {
             d.classList.remove('open');
@@ -159,7 +159,13 @@ function initDropdown() {
             if (t) t.setAttribute('aria-expanded', 'false');
           }
         });
-        setOpen(!dropdown.classList.contains('open'));
+        if (!isOpen) {
+          e.preventDefault();
+          setOpen(true);
+        } else {
+          // second tap — allow navigation to Work/Services, just close the menu after
+          setOpen(false);
+        }
       }
     });
 
