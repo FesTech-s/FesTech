@@ -582,6 +582,7 @@ function initLiteYT() {
     });
   });
 
+  // Strict scroll-only: no preload margin — iframe only when card actually enters viewport (plus click fallback)
   if (!('IntersectionObserver' in window)) return;
   const io = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
@@ -590,7 +591,7 @@ function initLiteYT() {
         io.unobserve(entry.target);
       }
     });
-  }, { rootMargin: '320px 0px', threshold: 0.01 });
+  }, { rootMargin: '0px', threshold: 0.15 });
   nodes.forEach(n => io.observe(n));
 }
 
