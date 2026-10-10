@@ -195,6 +195,7 @@ html {
      <body>'s own background would cover the .bg-grade layer at z-index:-1 */
   background: var(--bg);
 }
+html { overflow-y: scroll; scrollbar-gutter: stable; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 
 body {
@@ -464,7 +465,7 @@ h1, h2, h3, h4 { font-family: var(--font-heading); font-weight: 800; line-height
 .grid-3 { grid-template-columns: repeat(3, 1fr); }
 .grid-4 { grid-template-columns: repeat(4, 1fr); }
 @media (max-width: 900px) { .grid-3, .grid-4 { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 600px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
+@media (max-width: 600px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } .hero .hero-actions { flex-direction: column; } .hero .hero-actions .btn { width: 100%; flex: none; } }
 
 /* ---------- Hero ---------- */
 .hero { padding: 72px 0 96px; }

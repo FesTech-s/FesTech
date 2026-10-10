@@ -97,13 +97,27 @@ function initMobileMenu() {
     nav.classList.toggle('open', open);
     document.body.classList.toggle('nav-open', open);
     toggle.setAttribute('aria-expanded', String(open));
+    toggle.textContent = open ? '✕' : '☰';
+    toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
     if (!open) {
-      // Drop focus so :focus-within on open dropdowns releases
       if (nav.contains(document.activeElement)) document.activeElement.blur();
+      // also close any open dropdowns when nav closes
+      document.querySelectorAll('.nav-dropdown.open').forEach(d => {
+        d.classList.remove('open');
+        const t = d.querySelector('.nav-link');
+        if (t) t.setAttribute('aria-expanded', 'false');
+      });
     }
   };
 
   toggle.addEventListener('click', () => setOpen(!nav.classList.contains('open')));
+  // clicking the dimmed backdrop closes the menu
+  document.addEventListener('click', (e) => {
+    if (!nav.classList.contains('open')) return;
+    if (e.target === document.body.querySelector('body.nav-open::before')) return;
+    // if click is outside nav and outside toggle, close
+    if (!nav.contains(e.target) && !toggle.contains(e.target)) setOpen(false);
+  });
   nav.querySelectorAll('a').forEach(a => {
     // Dropdown triggers open a submenu instead of navigating — leave them alone
     if (a.parentElement && a.parentElement.classList.contains('nav-dropdown')) return;
@@ -733,6 +747,57 @@ function initChat() {
   document.body.appendChild(panel);
   document.body.appendChild(fab);
 
+  // ── Make chatbot FAB draggable anywhere ──
+  try {
+    const saved = JSON.parse(localStorage.getItem('chatFabPos') || 'null');
+    if (saved && typeof saved.x === 'number' && typeof saved.y === 'number') {
+      fab.style.left = saved.x + 'px';
+      fab.style.top = saved.y + 'px';
+      fab.style.right = 'auto';
+      fab.style.bottom = 'auto';
+    }
+  } catch (_) {}
+  fab.style.touchAction = 'none';
+  let isDragging = false, hasDragged = false, startX = 0, startY = 0, fabX = 0, fabY = 0;
+  fab.addEventListener('pointerdown', (e) => {
+    isDragging = true; hasDragged = false;
+    fab.setPointerCapture(e.pointerId);
+    startX = e.clientX; startY = e.clientY;
+    const r = fab.getBoundingClientRect();
+    fabX = r.left; fabY = r.top;
+    fab.style.transition = 'none';
+    fab.style.cursor = 'grabbing';
+  });
+  fab.addEventListener('pointermove', (e) => {
+    if (!isDragging) return;
+    const dx = e.clientX - startX, dy = e.clientY - startY;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) hasDragged = true;
+    const nx = Math.max(8, Math.min(window.innerWidth - fab.offsetWidth - 8, fabX + dx));
+    const ny = Math.max(8, Math.min(window.innerHeight - fab.offsetHeight - 8, fabY + dy));
+    fab.style.left = nx + 'px';
+    fab.style.top = ny + 'px';
+    fab.style.right = 'auto';
+    fab.style.bottom = 'auto';
+    // keep panel near fab when open — nudge it
+    if (panel.classList.contains('is-open')) {
+      panel.style.right = (window.innerWidth - nx - fab.offsetWidth) + 'px';
+      panel.style.bottom = (window.innerHeight - ny + 12) + 'px';
+    }
+  });
+  const endDrag = (e) => {
+    if (!isDragging) return;
+    isDragging = false;
+    try { fab.releasePointerCapture(e.pointerId); } catch (_) {}
+    fab.style.transition = '';
+    fab.style.cursor = '';
+    if (hasDragged) {
+      try { localStorage.setItem('chatFabPos', JSON.stringify({ x: parseInt(fab.style.left, 10), y: parseInt(fab.style.top, 10) })); } catch (_) {}
+      setTimeout(() => { hasDragged = false; }, 0);
+    }
+  };
+  fab.addEventListener('pointerup', endDrag);
+  fab.addEventListener('pointercancel', endDrag);
+
   const log = panel.querySelector('.chat-log');
   const form = panel.querySelector('.chat-form');
   const input = form.querySelector('input');
@@ -755,7 +820,8 @@ function initChat() {
     if (state) { input.focus(); }
   };
 
-  fab.addEventListener('click', () => {
+  fab.addEventListener('click', (e) => {
+    if (hasDragged) { e.preventDefault(); e.stopPropagation(); hasDragged = false; return; }
     const next = !panel.classList.contains('is-open');
     open(next);
     if (next && !log.children.length) greet();
