@@ -111,6 +111,15 @@ function initMobileMenu() {
   };
 
   toggle.addEventListener('click', () => setOpen(!nav.classList.contains('open')));
+  // swipe from right edge to open, swipe right to close
+  let tStartX = 0, tStartY = 0;
+  window.addEventListener('touchstart', (e) => { tStartX = e.touches[0].clientX; tStartY = e.touches[0].clientY; }, { passive: true });
+  window.addEventListener('touchend', (e) => {
+    const dx = e.changedTouches[0].clientX - tStartX, dy = e.changedTouches[0].clientY - tStartY;
+    if (Math.abs(dy) > Math.abs(dx)) return;
+    if (!nav.classList.contains('open') && tStartX > window.innerWidth - 30 && dx < -40) setOpen(true);
+    if (nav.classList.contains('open') && dx > 50) setOpen(false);
+  }, { passive: true });
   // clicking the dimmed backdrop closes the menu
   document.addEventListener('click', (e) => {
     if (!nav.classList.contains('open')) return;
@@ -146,8 +155,29 @@ function initDropdown() {
     const setOpen = (open) => {
       dropdown.classList.toggle('open', open);
       trigger.setAttribute('aria-expanded', String(open));
-      if (!open) trigger.blur(); // release :focus-within so it can actually close
+      if (!open) trigger.blur();
     };
+    // back button for side-panel dropdown on mobile
+    let backBtn = dropdown.querySelector('.dropdown-back');
+    if (!backBtn) {
+      backBtn = document.createElement('button');
+      backBtn.className = 'dropdown-back';
+      backBtn.type = 'button';
+      backBtn.innerHTML = '← Back';
+      backBtn.addEventListener('click', () => setOpen(false));
+      const menu = dropdown.querySelector('.dropdown-menu');
+      if (menu) menu.insertBefore(backBtn, menu.firstChild);
+    }
+    // swipe right to close side-panel dropdown
+    let dStartX = 0;
+    const dMenu = dropdown.querySelector('.dropdown-menu');
+    if (dMenu) {
+      dMenu.addEventListener('touchstart', (e) => { dStartX = e.touches[0].clientX; }, { passive: true });
+      dMenu.addEventListener('touchend', (e) => {
+        const dx = e.changedTouches[0].clientX - dStartX;
+        if (dx > 50 && dropdown.classList.contains('open')) setOpen(false);
+      }, { passive: true });
+    }
 
     trigger.addEventListener('click', function (e) {
       if (window.innerWidth <= 860) {
