@@ -496,88 +496,30 @@ function initVideoModal() {
   });
 }
 
-/* 1-Second Hover Pop-out and Video Autoplay for Video Cards */
+/* 1-Second Hover Pop-out for Video Cards — no overlay, no YT API hijack so embeds stay clickable */
 function initVideoAutoplay() {
   const videoCards = document.querySelectorAll('.video-card');
   if (videoCards.length === 0) return;
 
   videoCards.forEach(card => {
     let hoverTimer;
-    card.addEventListener('mouseenter', () => {
+    const onEnter = () => {
       if (document.querySelector('.lightbox.active')) return;
-      hoverTimer = setTimeout(() => triggerCardPopout(card), 1000);
-    });
-    card.addEventListener('mouseleave', () => {
+      clearTimeout(hoverTimer);
+      hoverTimer = setTimeout(() => triggerCardPopout(card), 800);
+    };
+    const onLeave = () => {
       clearTimeout(hoverTimer);
       removeCardPopout(card);
-    });
+    };
+    card.addEventListener('mouseenter', onEnter);
+    card.addEventListener('mouseleave', onLeave);
+    card.addEventListener('focusin', onEnter);
+    card.addEventListener('focusout', onLeave);
   });
 
-  if (!window.YT) {
-    const tag = document.createElement('script');
-    tag.src = "https://www.youtube.com/iframe_api";
-    const firstScriptTag = document.getElementsByTagName('script')[0];
-    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-  }
-
-  const prevOnReady = window.onYouTubeIframeAPIReady;
-  window.onYouTubeIframeAPIReady = function () {
-    if (typeof prevOnReady === 'function') prevOnReady();
-
-    videoCards.forEach((card, index) => {
-      const iframe = card.querySelector('iframe');
-      if (!iframe) return;
-
-      iframe.id = 'yt-player-' + index;
-      card.style.position = 'relative';
-
-      let overlay = card.querySelector('.video-hover-overlay');
-      if (!overlay) {
-        overlay = document.createElement('div');
-        overlay.className = 'video-hover-overlay';
-        overlay.style.position = 'absolute';
-        overlay.style.top = '0';
-        overlay.style.left = '0';
-        overlay.style.width = '100%';
-        overlay.style.height = 'calc(100% - 60px)';
-        overlay.style.zIndex = '10';
-        card.appendChild(overlay);
-      }
-
-      new YT.Player(iframe.id, {
-        events: {
-          'onReady': function (event) {
-            let playTimer;
-
-            overlay.addEventListener('mouseenter', () => {
-              playTimer = setTimeout(() => {
-                triggerCardPopout(card);
-                try {
-                  event.target.mute();
-                  event.target.playVideo();
-                } catch (err) {}
-                overlay.style.pointerEvents = 'none';
-              }, 1000);
-            });
-
-            overlay.addEventListener('mouseleave', () => clearTimeout(playTimer));
-
-            card.addEventListener('mouseleave', () => {
-              clearTimeout(playTimer);
-              removeCardPopout(card);
-              try {
-                const state = event.target.getPlayerState();
-                if (state === YT.PlayerState.PLAYING || state === YT.PlayerState.BUFFERING) {
-                  event.target.pauseVideo();
-                }
-              } catch (err) {}
-              overlay.style.pointerEvents = 'auto';
-            });
-          }
-        }
-      });
-    });
-  };
+  // Remove any stale hover overlays left from a previous build (cached JS / service worker)
+  document.querySelectorAll('.video-hover-overlay').forEach(el => el.remove());
 }
 
 /* ── Scroll-to-Top / Scroll-to-Bottom Buttons ── */

@@ -864,8 +864,15 @@ html:not(.js) .reveal { opacity: 1; transform: none; }
 }
 .video-card iframe {
   width: 100%;
-  aspect-ratio: 9/16;
+  aspect-ratio: 16/9;
   display: block;
+  border: 0;
+}
+.video-card--short iframe {
+  aspect-ratio: 9/16;
+}
+.video-card--wide iframe {
+  aspect-ratio: 16/9;
 }
 .video-card-body {
   padding: 16px;
